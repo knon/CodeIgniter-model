@@ -78,6 +78,7 @@ class MY_Model extends CI_Model
 
     /**
      * Define the result order by.
+     * [column => direction]
      *
      * @var array
      */
@@ -94,6 +95,12 @@ class MY_Model extends CI_Model
     {
         parent::__construct();
         $this->db = $this->load->database($this->db_conf, true);
+
+        if (! empty($this->order_by)) {
+            foreach ($this->order_by as $column=> $direction) {
+                $this->db->order_by($column, $direction);
+            }
+        }
     }
 
     /**
@@ -194,11 +201,11 @@ class MY_Model extends CI_Model
     }
 
     /**
-     * Update rows of data.
+     * Update rows of data. Return true if successful. Otherwise, return false.
      *
      * @param array $data
      * @param string $index
-     * @return mixed
+     * @return bool
      */
     public function batch_save($data, $index)
     {
@@ -216,7 +223,7 @@ class MY_Model extends CI_Model
     }
 
     /**
-     * Search the table for one row of data with primary key value.
+     * Search the table for one row of data with primary key.
      * If array is given, search with where conditions.
      *
      * @param mixed $id
@@ -877,7 +884,7 @@ class MY_Model extends CI_Model
     }
 
     /**
-     * Get the primary key column
+     * Return the primary key column
      *
      * @return string
      */
@@ -888,26 +895,6 @@ class MY_Model extends CI_Model
         }
 
         return $this->primary_key;
-    }
-
-    /**
-     * Compile the SELECT statement
-     *
-     * Generates a query string based on which functions were used.
-     * Should not be called directly.
-     *
-     * @param	bool	$select_override
-     * @return	string
-     */
-    protected function _compile_select($select_override = false)
-    {
-        if (! empty($this->order_by)) {
-            foreach ($this->order_by as $column => $order) {
-                $this->order_by($column, $order);
-            }
-        }
-
-        return $this->db->_compile_select($select_override);
     }
 
     /**
@@ -930,7 +917,7 @@ class MY_Model extends CI_Model
     }
 
     /**
-     * Filter the columns, get the availble columns.
+     * Filter the columns, return the availble columns.
      *
      * @param string $columns
      * @param bool $return_string true return string, false return array
@@ -963,7 +950,7 @@ class MY_Model extends CI_Model
     }
 
     /**
-     * Get the table name.
+     * Return the table name.
      *
      * @param bool $with_prefix false without prefix, true with prefix
      * @return string
