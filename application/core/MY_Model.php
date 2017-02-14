@@ -950,6 +950,19 @@ class MY_Model extends CI_Model
     }
 
     /**
+     * Set the table.
+     *
+     * @param string $table
+     * @return $this
+     */
+    public function set_table($table)
+    {
+        $this->table = $table;
+
+        return $this;
+    }
+
+    /**
      * Return the table name.
      *
      * @param bool $with_prefix false without prefix, true with prefix
@@ -961,11 +974,7 @@ class MY_Model extends CI_Model
 
         if (empty($table)) {
             $class = strtolower(get_class($this));
-            if ($start = strpos($class, '_model') !== false) {
-                $table = substr($class, 0, -6);
-            } else {
-                $table = $class;
-            }
+            $table = strpos($class, '_model') !== false ? substr($class, 0, -6) : $class;
         }
 
         if ($with_prefix) {
