@@ -213,6 +213,10 @@ class MY_Model extends CI_Model
             $row = $this->tidy_data($row);
         }
 
+        if (empty($data)) {
+            return false;
+        }
+
         $result = $this->update_batch($data, $index);
 
         if ($result === false) {
