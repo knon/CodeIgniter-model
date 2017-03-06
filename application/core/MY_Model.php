@@ -94,13 +94,7 @@ class MY_Model extends CI_Model
     public function __construct()
     {
         parent::__construct();
-        $this->db = $this->load->database($this->db_conf, true);
-
-        if (! empty($this->order_by)) {
-            foreach ($this->order_by as $column=> $direction) {
-                $this->db->order_by($column, $direction);
-            }
-        }
+        $this->get_db();
     }
 
     /**
@@ -268,9 +262,11 @@ class MY_Model extends CI_Model
      *
      * @param array $where
      * @param string $columns
+     * @param int $offset
+     * @param int $limit
      * @return array
      */
-    public function find($where, $columns = '')
+    public function find($where, $columns = '', $offset = null, $limit = null)
     {
         $where = $this->tidy_data($where);
 
@@ -280,6 +276,14 @@ class MY_Model extends CI_Model
             } else {
                 $this->where($key, $val);
             }
+        }
+
+        if (isset($offset) && $offset > 0) {
+            $this->offset($offset);
+        }
+
+        if (isset($limit) && $limit > 0) {
+            $this->limit($limit);
         }
 
         return $this->select($columns)->get()->result_array();
@@ -433,6 +437,12 @@ class MY_Model extends CI_Model
     {
         $table = $this->get_table();
 
+        if (isset($this->order_by) && is_array($this->order_by)) {
+            foreach ($this->order_by as $column=> $direction) {
+                $this->db->order_by($column, $direction);
+            }
+        }
+
         return $this->db->get($table, $limit, $offset);
     }
 
@@ -465,6 +475,12 @@ class MY_Model extends CI_Model
     public function get_where($where = null, $limit = null, $offset = null)
     {
         $table = $this->get_table();
+
+        if (isset($this->order_by) && is_array($this->order_by)) {
+            foreach ($this->order_by as $column=> $direction) {
+                $this->db->order_by($column, $direction);
+            }
+        }
 
         return $this->db->get_where($table, $where, $limit, $offset);
     }
@@ -986,5 +1002,34 @@ class MY_Model extends CI_Model
         }
 
         return $table;
+    }
+
+    /**
+     * Return the db instance.
+     *
+     * @return $db
+     */
+    protected function get_db()
+    {
+        if (is_null($this->db)) {
+            $ci = &get_instance();
+            $this->db = $ci->load->database($this->db_conf, true);
+        }
+
+        return $this->db;
+    }
+
+    /**
+     * Set the db config, and reload the db instance.
+     *
+     * @return $this
+     */
+    public function set_db_conf($db_conf)
+    {
+        $this->db_conf = $db_conf;
+        $ci = &get_instance();
+        $this->db = $ci->load->database($this->db_conf, true);
+
+        return $this;
     }
 }
