@@ -26,6 +26,8 @@ class MY_Model extends CI_Model
     const VALUE_YES = 1;
     // Const value NO as 0.
     const VALUE_NO = 0;
+    // Max count of where in's values
+    const WHERE_IN_MAX_COUNT = 2000;
 
     /**
      * Define the soft delete column.
@@ -288,6 +290,114 @@ class MY_Model extends CI_Model
 
         return $this->select($columns)->get()->result_array();
     }
+
+	/**
+	 * WHERE IN
+	 *
+	 * Generates a WHERE field IN('item', 'item') SQL query,
+	 * joined with 'AND' if appropriate.
+	 *
+	 * @param	string	$key	The field to search
+	 * @param	array	$values	The values searched on
+	 * @param	bool	$escape
+	 * @return	$this
+	 */
+	public function where_in($key = NULL, $values = NULL, $escape = NULL)
+    {
+        if (count($values) > self::WHERE_IN_MAX_COUNT) {
+            $values_chunks = array_chunk($values, self::WHERE_IN_MAX_COUNT);
+            $this->group_start();
+            foreach ($values_chunks as $chunk) {
+                $this->db->or_where_in($key, $chunk, $escape);
+            }
+            $this->group_end();
+        } else {
+            $this->db->where_in($key, $values, $escape);
+        }
+
+        return $this;
+    }
+
+	/**
+	 * OR WHERE IN
+	 *
+	 * Generates a WHERE field IN('item', 'item') SQL query,
+	 * joined with 'OR' if appropriate.
+	 *
+	 * @param	string	$key	The field to search
+	 * @param	array	$values	The values searched on
+	 * @param	bool	$escape
+	 * @return	$this
+	 */
+	public function or_where_in($key = NULL, $values = NULL, $escape = NULL)
+	{
+        if (count($values) > self::WHERE_IN_MAX_COUNT) {
+            $values_chunks = array_chunk($values, self::WHERE_IN_MAX_COUNT);
+            $this->or_group_start();
+            foreach ($values_chunks as $chunk) {
+                $this->db->or_where_in($key, $chunk, $escape);
+            }
+            $this->group_end();
+        } else {
+            $this->db->or_where_in($key, $values, $escape);
+        }
+
+        return $this;
+	}
+
+	/**
+	 * WHERE NOT IN
+	 *
+	 * Generates a WHERE field NOT IN('item', 'item') SQL query,
+	 * joined with 'AND' if appropriate.
+	 *
+	 * @param	string	$key	The field to search
+	 * @param	array	$values	The values searched on
+	 * @param	bool	$escape
+	 * @return	$this
+	 */
+	public function where_not_in($key = NULL, $values = NULL, $escape = NULL)
+	{
+        if (count($values) > self::WHERE_IN_MAX_COUNT) {
+            $values_chunks = array_chunk($values, self::WHERE_IN_MAX_COUNT);
+            $this->not_group_start();
+            foreach ($values_chunks as $chunk) {
+                $this->db->or_where_in($key, $chunk, $escape);
+            }
+            $this->group_end();
+        } else {
+            $this->db->where_not_in($key, $values, $escape);
+        }
+
+        return $this;
+	}
+
+	/**
+	 * OR WHERE NOT IN
+	 *
+	 * Generates a WHERE field NOT IN('item', 'item') SQL query,
+	 * joined with 'OR' if appropriate.
+	 *
+	 * @param	string	$key	The field to search
+	 * @param	array	$values	The values searched on
+	 * @param	bool	$escape
+	 * @return	CI_DB_query_builder
+	 */
+	public function or_where_not_in($key = NULL, $values = NULL, $escape = NULL)
+	{
+        if (count($values) > self::WHERE_IN_MAX_COUNT) {
+            $values_chunks = array_chunk($values, self::WHERE_IN_MAX_COUNT);
+            $this->or_not_group_start();
+            foreach ($values_chunks as $chunk) {
+                $this->db->or_where_in($key, $chunk, $escape);
+            }
+            $this->group_end();
+        } else {
+            $this->db->or_where_not_in($key, $values, $escape);
+        }
+
+        return $this;
+	}
 
     /**
      * If the solf delete is enabled, query with the soft delete is NO. 
@@ -894,7 +1004,7 @@ class MY_Model extends CI_Model
             throw new Exception('Call undefined method ' . $method . '.');
         }
 
-        $result = $obj->$method(...$parameters);
+        $result = $obj->$method(... $parameters);
 
         if ($result instanceof CI_DB_query_builder) {
             $result = $this;
@@ -1012,11 +1122,23 @@ class MY_Model extends CI_Model
     protected function get_db()
     {
         if (is_null($this->db)) {
-            $ci = &get_instance();
-            $this->db = $ci->load->database($this->db_conf, true);
+            $this->load_db();
         }
 
         return $this->db;
+    }
+
+    /**
+     * Load the db instance.
+     *
+     * @return $this
+     */
+    protected function load_db()
+    {
+        $ci = &get_instance();
+        $this->db = $ci->load->database($this->db_conf, true);
+
+        return $this;
     }
 
     /**
@@ -1027,8 +1149,7 @@ class MY_Model extends CI_Model
     public function set_db_conf($db_conf)
     {
         $this->db_conf = $db_conf;
-        $ci = &get_instance();
-        $this->db = $ci->load->database($this->db_conf, true);
+        $this->load_db();
 
         return $this;
     }
